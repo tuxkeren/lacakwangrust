@@ -1,0 +1,33 @@
+[package]
+name = "lacakwangrust"
+version = "1.0.0"
+edition = "2021"
+description = "LacakWangRust - Pencatatan Keuangan Sederhana (Native Desktop, Rust + egui)"
+authors = ["LacakWangRust"]
+
+[dependencies]
+# GUI native (tanpa webview). Memakai backend OpenGL (glow) agar ringan & kompatibel.
+eframe = { version = "0.36.2", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    "wayland",
+    "x11",
+] }
+egui = "0.36.2"
+
+# Database SQLite (sama seperti versi PHP), library SQLite di-bundle agar tidak perlu install sistem.
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+
+# Tanggal & waktu
+chrono = "0.4.45"
+
+[build-dependencies]
+# Dipakai `build.rs` untuk menyisipkan ikon & metadata ke .exe Windows.
+# Pada target non-Windows tidak dijalankan (lihat build.rs).
+winresource = "0.1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

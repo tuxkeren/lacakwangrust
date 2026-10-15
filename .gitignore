@@ -1,0 +1,12 @@
+# Hasil kompilasi Rust
+/target
+
+# Database SQLite (dibuat otomatis saat aplikasi dijalankan).
+# Repo ini sengaja TIDAK menyertakan file database apa pun.
+/database/*.db
+/database/*.db-journal
+/database/*.db-wal
+/database/*.db-shm
+
+# Paket rilis lokal (biner dibagikan lewat GitHub Releases, bukan lewat repo)
+/dist/
