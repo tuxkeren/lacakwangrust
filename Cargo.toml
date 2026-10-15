@@ -3,7 +3,7 @@ name = "lacakwangrust"
 version = "1.0.0"
 edition = "2021"
 description = "LacakWangRust - Pencatatan Keuangan Sederhana (Native Desktop, Rust + egui)"
-authors = ["LacakWangRust"]
+authors = ["Athailah (tuxkeren)"]
 
 [dependencies]
 # GUI native (tanpa webview). Memakai backend OpenGL (glow) agar ringan & kompatibel.
@@ -12,6 +12,8 @@ eframe = { version = "0.36.2", default-features = false, features = [
     "glow",
     "wayland",
     "x11",
+    # Agar tautan di dialog "Tentang" bisa dibuka di peramban bawaan sistem.
+    "links",
 ] }
 egui = "0.36.2"
 

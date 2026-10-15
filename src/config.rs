@@ -13,6 +13,14 @@ pub struct Config {
     pub currency_code: String,
     /// Jumlah baris per halaman pada daftar transaksi.
     pub per_page: usize,
+    /// Nama pembuat aplikasi (ditampilkan di footer & dialog "Tentang").
+    pub author: String,
+    /// Nama pengguna GitHub pembuat, ditulis dalam tanda kurung.
+    pub author_handle: String,
+    /// Alamat repositori, dipakai untuk tautan pada dialog "Tentang".
+    pub repo_url: String,
+    /// Lisensi aplikasi, ditampilkan pada dialog "Tentang".
+    pub license: String,
 }
 
 impl Default for Config {
@@ -23,7 +31,18 @@ impl Default for Config {
             currency_symbol: "Rp".to_string(),
             currency_code: "IDR".to_string(),
             per_page: 10,
+            author: "Athailah".to_string(),
+            author_handle: "tuxkeren".to_string(),
+            repo_url: "https://github.com/tuxkeren/lacakwangrust".to_string(),
+            license: "MIT License".to_string(),
         }
+    }
+}
+
+impl Config {
+    /// Kredit pembuat, mis. `Athailah (tuxkeren)`.
+    pub fn author_credit(&self) -> String {
+        format!("{} ({})", self.author, self.author_handle)
     }
 }
 

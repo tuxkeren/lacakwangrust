@@ -24,7 +24,16 @@ fn main() {
         "LacakWangRust - Pencatatan Keuangan Sederhana",
     );
     res.set("OriginalFilename", "lacakwangrust.exe");
-    res.set("LegalCopyright", "MIT License");
+    // Kredit pembuat juga ikut tertulis di properti berkas `.exe`
+    // (tab "Details" di Windows), bukan hanya di dalam aplikasi.
+    res.set("CompanyName", "Athailah");
+    res.set("LegalCopyright", "\u{00A9} 2026 Athailah - MIT License");
+    res.set(
+        "Comments",
+        "Dibuat oleh Athailah (tuxkeren) - https://github.com/tuxkeren/lacakwangrust",
+    );
+    res.set("FileVersion", "1.0.0.0");
+    res.set("ProductVersion", "1.0.0.0");
 
     // Kalau penyusun resource tidak tersedia, jangan gagalkan build —
     // aplikasi tetap jalan, hanya tanpa ikon di dalam .exe.

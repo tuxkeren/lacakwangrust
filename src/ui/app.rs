@@ -97,6 +97,8 @@ pub struct App {
     pub cat_form: Option<CatForm>,
     pub acc_form: Option<AccForm>,
     pub confirm: Option<Confirm>,
+    /// Dialog "Tentang" (info aplikasi + kredit pembuat) sedang terbuka.
+    pub about_open: bool,
 }
 
 impl App {
@@ -119,6 +121,7 @@ impl App {
             cat_form: None,
             acc_form: None,
             confirm: None,
+            about_open: false,
         }
     }
 
@@ -223,8 +226,9 @@ impl App {
     // Kerangka halaman
     // ---------------------------------------------------------------
 
-    fn navbar(&self, ui: &mut egui::Ui) -> Option<Page> {
+    fn navbar(&self, ui: &mut egui::Ui) -> (Option<Page>, bool) {
         let mut target = None;
+        let mut about = false;
 
         egui::Panel::top("navbar")
             .show_separator_line(false)
@@ -249,6 +253,13 @@ impl App {
                     );
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        // Ditambahkan lebih dulu supaya tampil paling kanan,
+                        // setelah menu halaman.
+                        if widgets::nav_button(ui, "Tentang", false).clicked() {
+                            about = true;
+                        }
+                        ui.add_space(6.0);
+
                         for (page, label) in [
                             (Page::Accounts, "Akun"),
                             (Page::Categories, "Kategori"),
@@ -264,7 +275,7 @@ impl App {
                 });
             });
 
-        target
+        (target, about)
     }
 
     fn footer(&self, ui: &mut egui::Ui) {
@@ -295,8 +306,115 @@ impl App {
                         .size(13.0)
                         .color(theme::GRAY_500),
                     );
+                    ui.add_space(4.0);
+                    ui.label(
+                        RichText::new(format!(
+                            "Dibuat oleh {} \u{00B7} {}",
+                            self.config.author_credit(),
+                            self.config.license
+                        ))
+                        .size(12.0)
+                        .color(theme::GRAY_400),
+                    );
                 });
             });
+    }
+
+    /// Dialog "Tentang": info aplikasi, kredit pembuat, lisensi, dan lokasi
+    /// berkas basis data. Dibuka lewat menu "Tentang" pada navbar.
+    fn show_about(&mut self, ctx: &egui::Context) {
+        if !self.about_open {
+            return;
+        }
+
+        fn label_cell(ui: &mut egui::Ui, text: &str) {
+            ui.label(RichText::new(text).size(13.0).color(theme::GRAY_500));
+        }
+        fn value_cell(ui: &mut egui::Ui, text: &str) {
+            ui.label(RichText::new(text).size(13.0).color(theme::GRAY_800));
+        }
+
+        let mut close = false;
+        let db_path = crate::config::resolve_db_path();
+
+        widgets::modal(ctx, "about_modal", egui::vec2(520.0, 0.0), |ui| {
+            ui.horizontal(|ui| {
+                ui.label(
+                    RichText::new("Tentang Aplikasi")
+                        .size(18.0)
+                        .strong()
+                        .color(theme::GRAY_900),
+                );
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if widgets::link(ui, "\u{00D7}", theme::GRAY_500, theme::GRAY_700).clicked() {
+                        close = true;
+                    }
+                });
+            });
+
+            ui.add_space(2.0);
+            ui.label(
+                RichText::new("Versi native (desktop) dari aplikasi PHP OOP PelacakDuit.")
+                    .size(13.0)
+                    .color(theme::GRAY_600),
+            );
+
+            ui.add_space(12.0);
+            ui.separator();
+            ui.add_space(12.0);
+
+            egui::Grid::new("about_grid")
+                .num_columns(2)
+                .spacing([20.0, 8.0])
+                .show(ui, |ui| {
+                    label_cell(ui, "Aplikasi");
+                    value_cell(
+                        ui,
+                        &format!("{} v{}", self.config.app_name, self.config.version),
+                    );
+                    ui.end_row();
+
+                    label_cell(ui, "Teknologi");
+                    value_cell(ui, "Rust + egui/eframe + SQLite");
+                    ui.end_row();
+
+                    label_cell(ui, "Pembuat");
+                    value_cell(ui, &self.config.author_credit());
+                    ui.end_row();
+
+                    label_cell(ui, "Repositori");
+                    ui.hyperlink_to(
+                        RichText::new(&self.config.repo_url).size(13.0),
+                        &self.config.repo_url,
+                    );
+                    ui.end_row();
+
+                    label_cell(ui, "Lisensi");
+                    value_cell(ui, &self.config.license);
+                    ui.end_row();
+
+                    label_cell(ui, "Basis data");
+                    ui.add(
+                        egui::Label::new(
+                            RichText::new(db_path.display().to_string())
+                                .size(13.0)
+                                .color(theme::GRAY_600),
+                        )
+                        .truncate(),
+                    );
+                    ui.end_row();
+                });
+
+            ui.add_space(20.0);
+            let full = ui.available_width();
+            if widgets::styled_button(ui, "Tutup", ButtonStyle::secondary(), Some(full)).clicked() {
+                close = true;
+            }
+        });
+
+        if close || ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            self.about_open = false;
+        }
     }
 
     fn alert_banner(&mut self, ui: &mut egui::Ui) {
@@ -421,8 +539,12 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
 
-        let nav_to = self.navbar(ui);
+        let (nav_to, about_clicked) = self.navbar(ui);
         self.footer(ui);
+
+        if about_clicked {
+            self.about_open = true;
+        }
 
         egui::CentralPanel::default()
             .frame(Frame::NONE.fill(theme::GRAY_50).inner_margin(Margin {
@@ -460,6 +582,7 @@ impl eframe::App for App {
         categories::show_form(self, &ctx);
         accounts::show_form(self, &ctx);
         self.show_confirm(&ctx);
+        self.show_about(&ctx);
 
         self.purge_expired_toast();
         ctx.request_repaint_after(Duration::from_millis(500));

@@ -94,7 +94,8 @@ Catatan teknis:
   (bukan pesan ke konsol yang tidak terlihat).
 - Ikon aplikasi disisipkan ke dalam `.exe` oleh `build.rs` (memakai
   `winresource` + `assets/icon.ico`), plus metadata versi/produk yang
-  terlihat di *Properties → Details*. Ikon yang sama juga dipasang ke
+  terlihat di *Properties → Details* — termasuk **CompanyName** dan
+  **LegalCopyright** (nama pembuat). Ikon yang sama juga dipasang ke
   jendela aplikasi saat berjalan, jadi tampil benar di title bar & taskbar.
 - Aplikasi hanya bergantung pada DLL bawaan Windows (Universal C Runtime
   `api-ms-win-crt-*`, `opengl32`, `user32`, dst.), jadi **tidak ada DLL
@@ -281,6 +282,24 @@ Beberapa hal sengaja berbeda karena keterbatasan/kebutuhan platform desktop:
 | Konfirmasi hapus           | `confirm()` bawaan browser       | Modal konfirmasi native                |
 | Form tambah/edit           | Halaman / AJAX terpisah          | Modal di dalam aplikasi                |
 
+## 👤 Pembuat
+
+**Athailah** ([@tuxkeren](https://github.com/tuxkeren)) — pengembang aplikasi ini.
+
+Kredit pembuat juga tampil di dalam aplikasi:
+
+- **Footer** setiap halaman: `Dibuat oleh Athailah (tuxkeren) · MIT License`
+- Menu **Tentang** di kanan atas: info aplikasi, versi, teknologi, pembuat,
+  tautan repositori, lisensi, dan lokasi berkas database.
+- *Properties → Details* pada `lacakwangrust.exe` (CompanyName, LegalCopyright,
+  Comments).
+
+Ingin mengganti nama/kreditnya? Ubah satu tempat saja, di
+`src/config.rs` (`Config::default()`), pada bagian `author`, `author_handle`,
+`repo_url`, dan `license`.
+
 ## 📄 Lisensi
 
-MIT License - Bebas digunakan & dimodifikasi.
+MIT License — bebas digunakan & dimodifikasi.
+
+Copyright (c) 2026 Athailah.

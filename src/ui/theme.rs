@@ -64,6 +64,8 @@ pub fn configure(ctx: &egui::Context) {
     visuals.faint_bg_color = GRAY_50;
     visuals.selection.bg_fill = BLUE_100;
     visuals.selection.stroke = Stroke::new(1.0, PRIMARY);
+    // Warna tautan disamakan dengan warna utama aplikasi (bukan biru bawaan egui).
+    visuals.hyperlink_color = BLUE_600;
     visuals.window_corner_radius = egui::CornerRadius::same(12);
     visuals.window_stroke = Stroke::new(1.0, GRAY_200);
     visuals.window_shadow = Shadow {
