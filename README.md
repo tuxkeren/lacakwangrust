@@ -138,6 +138,9 @@ lacakwangrust/
 │   └── icon.png / icon-512.png #   pratinjau
 ├── database/
 │   └── lacakwangrust.db        # SQLite (dibuat otomatis, tidak di-commit)
+├── laporan/                    # Laporan PDF hasil cetak (dibuat otomatis, tidak di-commit)
+├── settings/
+│   └── tema.txt                # Preferensi tema terang/gelap (dibuat otomatis)
 ├── dist/                       # Hasil build lokal untuk dibagikan (tidak di-commit)
 │   ├── lacakwangrust-windows-x86_64/   # .exe + panduan (siap salin)
 │   └── lacakwangrust-windows-x86_64.zip
@@ -147,28 +150,32 @@ lacakwangrust/
 │   └── make_icon.py            # Pembuat ikon (.ico/.png/.rgba)
 └── src/
     ├── main.rs                 # Entry point (window + inisialisasi DB)
-    ├── config.rs               # Konfigurasi aplikasi + lokasi database
+    ├── config.rs               # Konfigurasi aplikasi + lokasi database/tema/laporan
     ├── util.rs                 # Format rupiah/tanggal, konversi warna, parse angka
+    ├── pdf.rs                  # Penulis laporan PDF dua kolom (tanpa mesin render)
     ├── db/
     │   ├── mod.rs              # Pembungkus koneksi (setara Database.php)
     │   └── schema.rs           # Auto-create tabel + data awal (setara Schema.php)
     ├── models/                 # Padanan folder `models/` PHP
     │   ├── account.rs          # Account + ringkasan per akun
     │   ├── category.rs         # Category (CRUD)
+    │   ├── report.rs           # Periode & data laporan keuangan
     │   └── transaction.rs      # Transaction (CRUD + statistik)
     ├── controllers/            # Padanan folder `controllers/` PHP
     │   ├── dashboard.rs
     │   ├── transaction.rs
     │   ├── category.rs
-    │   └── account.rs
+    │   ├── account.rs
+    │   └── report.rs           # Penyusun data laporan per periode
     └── ui/                     # Padanan folder `views/` PHP (dirender dengan egui)
         ├── app.rs              # Kerangka aplikasi: navigasi, modal, notifikasi
-        ├── theme.rs            # Palet warna Tailwind + gaya egui
+        ├── theme.rs            # Palet warna Tailwind (terang & gelap) + gaya egui
         ├── widgets.rs          # Widget mirip Tailwind (kartu, badge, tombol, tabel)
         ├── dashboard.rs
         ├── transactions.rs
         ├── categories.rs
-        └── accounts.rs
+        ├── accounts.rs
+        └── report.rs           # Dialog pemilihan periode & pembuatan laporan PDF
 ```
 
 ## ✨ Fitur
@@ -197,12 +204,34 @@ lacakwangrust/
 - Saldo awal + saldo berjalan (saldo awal + masuk − keluar) per akun
 - Ringkasan total pemasukan/pengeluaran/saldo gabungan semua akun
 
+### Laporan PDF
+- Tombol **📄 Laporan PDF** di navbar membuka dialog pemilihan periode:
+  **Semua Data**, **Bulan Ini**, atau **Tahun Ini**.
+- Laporan dicetak dua kolom berdampingan: **Pemasukan** (kiri) dan
+  **Pengeluaran** (kanan). Tiap baris memuat tanggal, deskripsi, dan jumlah.
+- Di bagian bawah ditampilkan ringkasan (total pemasukan, total pengeluaran,
+  selisih, saldo awal periode) dan **sisa saldo** pada akhir periode.
+- Hasil disimpan otomatis di folder `laporan/` dengan nama
+  `laporan-YYYYMMDD-HHMMSS.pdf` (tanpa dialog sistem).
+- Bila tidak ada transaksi pada periode terpilih, laporan tidak dibuat dan
+  dialog menampilkan pesan galat.
+- PDF ditulis langsung oleh aplikasi (font bawaan Helvetica), tanpa
+  dependensi mesin render.
+
+### Tema Terang / Gelap
+- Tombol **🌙 / ☀️** di navbar mengganti tema terang ↔ gelap; warna teks
+  serta seluruh komponen ikut menyesuaikan.
+- Pilihan tema **diingat** di `settings/tema.txt` dan dipakai lagi saat
+  aplikasi dibuka berikutnya.
+
 ## 🎨 Tampilan
 
 - Palet warna memakai nilai heksadesimal **TailwindCSS yang sama** dengan versi PHP
   (mis. primary `#3B82F6`, hijau `#10B981`, merah `#EF4444`, latar `#F9FAFB`).
 - Widget ditulis khusus agar menyerupai komponen Tailwind: kartu bershadow,
   badge bulat, progress bar, tabel bergaris, tombol solid, dan modal ber-overlay.
+- Mendukung **mode terang & gelap**: semua warna diambil dari palet semantik
+  (`text()`, `surface()`, `border()`, dst.) yang otomatis menyesuaikan tema aktif.
 - Semua teks antarmuka berbahasa Indonesia, format uang `Rp 1.234.567`,
   format tanggal `dd/mm/yyyy`.
 
@@ -271,6 +300,18 @@ LACAKWANGRUST_DB=/path/ke/pelacakduit/database/pelacakduit.db cargo run
 > Catatan: bila database PHP masih memakai format lama (mis. belum punya
 > kolom `account_id`), aplikasi akan menambahkannya otomatis saat pertama
 > dibuka.
+
+### Lokasi tema & laporan
+
+Preferensi tema dan berkas laporan disimpan terpisah dari database (skema
+database tetap identik dengan versi PHP), dan lokasinya bisa diubah lewat
+environment variable:
+
+| Variabel                | Default          | Keterangan                              |
+| ----------------------- | ---------------- | --------------------------------------- |
+| `LACAKWANGRUST_DB`      | `database/lacakwangrust.db` | Lokasi file database SQLite   |
+| `LACAKWANGRUST_THEME`   | `settings/tema.txt`         | Lokasi berkas preferensi tema |
+| `LACAKWANGRUST_LAPORAN` | `laporan`                   | Folder tujuan laporan PDF     |
 
 ## 🆚 Perbedaan dengan Versi PHP
 

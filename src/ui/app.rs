@@ -2,15 +2,15 @@
 //!
 //! Padanan dari `views/layouts/header.php` + `footer.php` dan `public/index.php`.
 
-use eframe::egui::{self, Align, Color32, Frame, Layout, Margin, RichText, Stroke};
+use eframe::egui::{self, Align, Frame, Layout, Margin, RichText, Stroke};
 use std::time::{Duration, Instant};
 
 use crate::config::Config;
 use crate::controllers::{AccountController, CategoryController, TransactionController, TransactionFilter};
 use crate::db::Database;
-use crate::models::{Account, Category};
+use crate::models::{Account, Category, ReportPeriod};
 
-use super::{accounts, categories, dashboard, theme, transactions, widgets};
+use super::{accounts, categories, dashboard, report, theme, transactions, widgets};
 use widgets::ButtonStyle;
 
 /// Halaman yang sedang aktif.
@@ -80,6 +80,15 @@ pub struct AccForm {
     pub error: Option<String>,
 }
 
+/// Aksi yang dipilih dari navbar pada satu bingkai gambar.
+#[derive(Clone, Copy, Debug, Default)]
+struct NavAction {
+    page: Option<Page>,
+    about: bool,
+    toggle_theme: bool,
+    report: bool,
+}
+
 /// State global aplikasi.
 pub struct App {
     pub db: Database,
@@ -99,6 +108,15 @@ pub struct App {
     pub confirm: Option<Confirm>,
     /// Dialog "Tentang" (info aplikasi + kredit pembuat) sedang terbuka.
     pub about_open: bool,
+
+    /// Tema tampilan yang sedang aktif (terang/gelap).
+    pub theme: theme::ThemeKind,
+    /// Dialog "Laporan PDF" sedang terbuka.
+    pub report_open: bool,
+    /// Periode yang dipilih pada dialog laporan.
+    pub report_period: ReportPeriod,
+    /// Pesan galat saat pembuatan laporan PDF gagal.
+    pub report_error: Option<String>,
 }
 
 impl App {
@@ -107,7 +125,8 @@ impl App {
         config: Config,
         db: Database,
     ) -> Self {
-        theme::configure(&cc.egui_ctx);
+        let theme_kind = theme::load_saved();
+        theme::apply(&cc.egui_ctx, theme_kind);
 
         Self {
             db,
@@ -122,7 +141,19 @@ impl App {
             acc_form: None,
             confirm: None,
             about_open: false,
+            theme: theme_kind,
+            report_open: false,
+            report_period: ReportPeriod::ThisMonth,
+            report_error: None,
         }
+    }
+
+    /// Mengganti tema terang/gelap lalu menyimpan pilihannya.
+    pub fn toggle_theme(&mut self, ctx: &egui::Context) {
+        let baru = self.theme.toggled();
+        theme::apply(ctx, baru);
+        theme::save_preference(baru);
+        self.theme = baru;
     }
 
     /// Menampilkan notifikasi sukses.
@@ -226,22 +257,21 @@ impl App {
     // Kerangka halaman
     // ---------------------------------------------------------------
 
-    fn navbar(&self, ui: &mut egui::Ui) -> (Option<Page>, bool) {
-        let mut target = None;
-        let mut about = false;
+    fn navbar(&self, ui: &mut egui::Ui) -> NavAction {
+        let mut action = NavAction::default();
 
         egui::Panel::top("navbar")
             .show_separator_line(false)
             .frame(
                 Frame::NONE
-                    .fill(Color32::WHITE)
+                    .fill(theme::surface())
                     .inner_margin(Margin {
                         left: 32,
                         right: 32,
                         top: 14,
                         bottom: 14,
                     })
-                    .stroke(Stroke::new(1.0, theme::GRAY_200)),
+                    .stroke(Stroke::new(1.0, theme::border())),
             )
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
@@ -249,16 +279,37 @@ impl App {
                         RichText::new(format!("\u{1F4B0} {}", self.config.app_name))
                             .size(22.0)
                             .strong()
-                            .color(theme::PRIMARY),
+                            .color(theme::primary_text()),
                     );
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         // Ditambahkan lebih dulu supaya tampil paling kanan,
                         // setelah menu halaman.
                         if widgets::nav_button(ui, "Tentang", false).clicked() {
-                            about = true;
+                            action.about = true;
                         }
                         ui.add_space(6.0);
+
+                        // Tombol ganti tema (matahari/bulan).
+                        let tema = widgets::nav_button(ui, self.theme.icon(), false)
+                            .on_hover_text(self.theme.switch_label());
+                        if tema.clicked() {
+                            action.toggle_theme = true;
+                        }
+                        ui.add_space(6.0);
+
+                        // Tombol cetak laporan PDF.
+                        if widgets::styled_button(
+                            ui,
+                            "\u{1F9FE} Laporan PDF",
+                            ButtonStyle::secondary(),
+                            None,
+                        )
+                        .clicked()
+                        {
+                            action.report = true;
+                        }
+                        ui.add_space(10.0);
 
                         for (page, label) in [
                             (Page::Accounts, "Akun"),
@@ -267,7 +318,7 @@ impl App {
                             (Page::Dashboard, "Dashboard"),
                         ] {
                             if widgets::nav_button(ui, label, self.page == page).clicked() {
-                                target = Some(page);
+                                action.page = Some(page);
                             }
                             ui.add_space(6.0);
                         }
@@ -275,7 +326,7 @@ impl App {
                 });
             });
 
-        (target, about)
+        action
     }
 
     fn footer(&self, ui: &mut egui::Ui) {
@@ -284,14 +335,14 @@ impl App {
             .show_separator_line(false)
             .frame(
                 Frame::NONE
-                    .fill(Color32::WHITE)
+                    .fill(theme::surface())
                     .inner_margin(Margin {
                         left: 32,
                         right: 32,
                         top: 16,
                         bottom: 16,
                     })
-                    .stroke(Stroke::new(1.0, theme::GRAY_200)),
+                    .stroke(Stroke::new(1.0, theme::border())),
             )
             .show(ui, |ui| {
                 ui.vertical_centered(|ui| {
@@ -304,7 +355,7 @@ impl App {
                             self.config.currency_code
                         ))
                         .size(13.0)
-                        .color(theme::GRAY_500),
+                        .color(theme::text_muted()),
                     );
                     ui.add_space(4.0);
                     ui.label(
@@ -314,7 +365,7 @@ impl App {
                             self.config.license
                         ))
                         .size(12.0)
-                        .color(theme::GRAY_400),
+                        .color(theme::text_faint()),
                     );
                 });
             });
@@ -328,10 +379,10 @@ impl App {
         }
 
         fn label_cell(ui: &mut egui::Ui, text: &str) {
-            ui.label(RichText::new(text).size(13.0).color(theme::GRAY_500));
+            ui.label(RichText::new(text).size(13.0).color(theme::text_muted()));
         }
         fn value_cell(ui: &mut egui::Ui, text: &str) {
-            ui.label(RichText::new(text).size(13.0).color(theme::GRAY_800));
+            ui.label(RichText::new(text).size(13.0).color(theme::text_soft()));
         }
 
         let mut close = false;
@@ -343,10 +394,10 @@ impl App {
                     RichText::new("Tentang Aplikasi")
                         .size(18.0)
                         .strong()
-                        .color(theme::GRAY_900),
+                        .color(theme::text()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if widgets::link(ui, "\u{00D7}", theme::GRAY_500, theme::GRAY_700).clicked() {
+                    if widgets::link(ui, "\u{00D7}", theme::text_muted(), theme::text_soft()).clicked() {
                         close = true;
                     }
                 });
@@ -356,7 +407,7 @@ impl App {
             ui.label(
                 RichText::new("Versi native (desktop) dari aplikasi PHP OOP PelacakDuit.")
                     .size(13.0)
-                    .color(theme::GRAY_600),
+                    .color(theme::text_muted()),
             );
 
             ui.add_space(12.0);
@@ -398,7 +449,7 @@ impl App {
                         egui::Label::new(
                             RichText::new(db_path.display().to_string())
                                 .size(13.0)
-                                .color(theme::GRAY_600),
+                                .color(theme::text_muted()),
                         )
                         .truncate(),
                     );
@@ -423,9 +474,17 @@ impl App {
         };
 
         let (bg, fg, border) = if toast.success {
-            (theme::GREEN_50, theme::GREEN_800, theme::GREEN_500)
+            (
+                theme::income_badge_bg(),
+                theme::income_badge_fg(),
+                theme::income_accent(),
+            )
         } else {
-            (theme::RED_50, theme::RED_800, theme::RED_500)
+            (
+                theme::expense_badge_bg(),
+                theme::expense_badge_fg(),
+                theme::expense_accent(),
+            )
         };
 
         let mut dismiss = false;
@@ -468,13 +527,13 @@ impl App {
                     RichText::new(&confirm.title)
                         .size(18.0)
                         .strong()
-                        .color(theme::GRAY_900),
+                        .color(theme::text()),
                 );
                 ui.add_space(10.0);
                 ui.label(
                     RichText::new(&confirm.message)
                         .size(14.0)
-                        .color(theme::GRAY_600),
+                        .color(theme::text_muted()),
                 );
                 ui.add_space(20.0);
 
@@ -539,15 +598,24 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
 
-        let (nav_to, about_clicked) = self.navbar(ui);
+        let nav = self.navbar(ui);
         self.footer(ui);
 
-        if about_clicked {
+        if nav.about {
             self.about_open = true;
         }
 
+        if nav.toggle_theme {
+            self.toggle_theme(&ctx);
+        }
+
+        if nav.report {
+            self.report_open = true;
+            self.report_error = None;
+        }
+
         egui::CentralPanel::default()
-            .frame(Frame::NONE.fill(theme::GRAY_50).inner_margin(Margin {
+            .frame(Frame::NONE.fill(theme::page_bg()).inner_margin(Margin {
                 left: 32,
                 right: 32,
                 top: 28,
@@ -569,7 +637,7 @@ impl eframe::App for App {
             });
 
         // Pindah halaman menutup semua modal yang terbuka.
-        if let Some(page) = nav_to {
+        if let Some(page) = nav.page {
             if page != self.page {
                 self.page = page;
                 self.tx_form = None;
@@ -581,6 +649,7 @@ impl eframe::App for App {
         transactions::show_form(self, &ctx);
         categories::show_form(self, &ctx);
         accounts::show_form(self, &ctx);
+        report::show(self, &ctx);
         self.show_confirm(&ctx);
         self.show_about(&ctx);
 

@@ -65,9 +65,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             ] {
                 let active = app.tx_filter == filter;
                 let accent = match filter {
-                    TransactionFilter::All => theme::PRIMARY,
-                    TransactionFilter::Income => theme::GREEN_600,
-                    TransactionFilter::Expense => theme::RED_600,
+                    TransactionFilter::All => theme::primary_fill(),
+                    TransactionFilter::Income => theme::income_fill(),
+                    TransactionFilter::Expense => theme::expense_fill(),
                 };
                 let style = if active {
                     ButtonStyle {
@@ -77,9 +77,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     }
                 } else {
                     ButtonStyle {
-                        fill: theme::GRAY_100,
-                        hover: theme::GRAY_200,
-                        text: theme::GRAY_700,
+                        fill: theme::secondary_fill(),
+                        hover: theme::secondary_fill_hover(),
+                        text: theme::secondary_text(),
                     }
                 };
                 if widgets::styled_button(ui, filter.label(), style, None).clicked() {
@@ -124,7 +124,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     ui.label(
                         RichText::new(util::format_date_id(&t.date))
                             .size(13.0)
-                            .color(theme::GRAY_900),
+                            .color(theme::text()),
                     );
                 });
                 // Kategori
@@ -137,7 +137,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                             RichText::new(&t.category_name)
                                 .size(13.0)
                                 .strong()
-                                .color(theme::GRAY_900),
+                                .color(theme::text()),
                         )
                         .truncate(),
                     );
@@ -146,7 +146,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 widgets::cell_at(ui, cols[2], CellAlign::Left, |ui| {
                     let name = t.account_name.clone().unwrap_or_else(|| "Tunai".into());
                     ui.add(
-                        egui::Label::new(RichText::new(name).size(13.0).color(theme::GRAY_600))
+                        egui::Label::new(RichText::new(name).size(13.0).color(theme::text_muted()))
                             .truncate(),
                     );
                 });
@@ -158,25 +158,25 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         .filter(|d| !d.is_empty())
                         .unwrap_or_else(|| "-".into());
                     ui.add(
-                        egui::Label::new(RichText::new(desc).size(13.0).color(theme::GRAY_500))
+                        egui::Label::new(RichText::new(desc).size(13.0).color(theme::text_muted()))
                             .truncate(),
                     );
                 });
                 // Tipe
                 widgets::cell_at(ui, cols[4], CellAlign::Left, |ui| {
                     let (bg, fg) = if t.kind == "income" {
-                        (theme::GREEN_100, theme::GREEN_800)
+                        (theme::income_badge_bg(), theme::income_badge_fg())
                     } else {
-                        (theme::RED_100, theme::RED_800)
+                        (theme::expense_badge_bg(), theme::expense_badge_fg())
                     };
                     widgets::badge(ui, util::transaction_type_label(&t.kind), bg, fg);
                 });
                 // Jumlah
                 widgets::cell_at(ui, cols[5], CellAlign::Right, |ui| {
                     let color = if t.kind == "income" {
-                        theme::GREEN_600
+                        theme::income_text()
                     } else {
-                        theme::RED_600
+                        theme::expense_text()
                     };
                     let sign = if t.kind == "income" { "+" } else { "-" };
                     ui.label(
@@ -190,14 +190,14 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 widgets::cell_at(ui, cols[6], CellAlign::Right, |ui| {
                     // `space-x-3` pada versi PHP (12px), termasuk jarak antar tautan.
                     ui.spacing_mut().item_spacing.x = 12.0;
-                    if widgets::link(ui, "Hapus", theme::RED_600, theme::RED_800).clicked() {
+                    if widgets::link(ui, "Hapus", theme::danger_text(), theme::danger_text_hover()).clicked() {
                         app.confirm = Some(Confirm {
                             title: "Hapus Transaksi".into(),
                             message: "Yakin ingin menghapus transaksi ini?".into(),
                             action: ConfirmAction::DeleteTransaction(row_id),
                         });
                     }
-                    if widgets::link(ui, "Edit", theme::PRIMARY, theme::BLUE_900).clicked() {
+                    if widgets::link(ui, "Edit", theme::primary_text(), theme::primary_text_hover()).clicked() {
                         app.open_tx_edit(row_id);
                     }
                 });
@@ -219,7 +219,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         data.total_count
                     ))
                     .size(13.0)
-                    .color(theme::GRAY_700),
+                    .color(theme::text_soft()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     ui.add_space(widgets::CELL_PAD);
@@ -228,15 +228,15 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         let active = page == data.current_page;
                         let style = if active {
                             ButtonStyle {
-                                fill: theme::BLUE_50,
-                                hover: theme::BLUE_50,
-                                text: theme::PRIMARY,
+                                fill: theme::primary_soft(),
+                                hover: theme::primary_soft(),
+                                text: theme::primary_text(),
                             }
                         } else {
                             ButtonStyle {
-                                fill: Color32::WHITE,
-                                hover: theme::GRAY_100,
-                                text: theme::GRAY_700,
+                                fill: theme::surface(),
+                                hover: theme::secondary_fill(),
+                                text: theme::secondary_text(),
                             }
                         };
                         if widgets::styled_button(ui, &page.to_string(), style, Some(40.0)).clicked() && !active
@@ -274,7 +274,7 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
                 RichText::new(if is_edit { "Edit Transaksi" } else { "Tambah Transaksi" })
                     .size(20.0)
                     .strong()
-                    .color(theme::GRAY_900),
+                    .color(theme::text()),
             );
         });
         ui.add_space(16.0);
@@ -287,11 +287,12 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             if widgets::choice_card(
                 ui,
-                w,
                 "Pemasukan",
+                None,
                 form.kind == "income",
-                theme::GREEN_500,
-                theme::GREEN_50,
+                w,
+                theme::income_accent(),
+                theme::income_soft(),
             )
             .clicked()
             {
@@ -301,11 +302,12 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
             ui.add_space(gap);
             if widgets::choice_card(
                 ui,
-                w,
                 "Pengeluaran",
+                None,
                 form.kind == "expense",
-                theme::RED_500,
-                theme::RED_50,
+                w,
+                theme::expense_accent(),
+                theme::expense_soft(),
             )
             .clicked()
             {

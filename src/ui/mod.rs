@@ -7,6 +7,7 @@ pub mod accounts;
 pub mod app;
 pub mod categories;
 pub mod dashboard;
+pub mod report;
 pub mod theme;
 pub mod transactions;
 pub mod widgets;

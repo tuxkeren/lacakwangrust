@@ -20,10 +20,10 @@ const WHITE: Color32 = Color32::WHITE;
 pub fn card<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
     let full = ui.available_width();
     egui::Frame::new()
-        .fill(WHITE)
+        .fill(theme::surface())
         .corner_radius(egui::CornerRadius::same(8))
         .inner_margin(egui::Margin::same(20))
-        .stroke(Stroke::new(1.0, theme::GRAY_100))
+        .stroke(Stroke::new(1.0, theme::border_soft()))
         .shadow(Shadow {
             color: Color32::from_black_alpha(12),
             ..Default::default()
@@ -39,7 +39,7 @@ pub fn card<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
 pub fn card_accent<R>(ui: &mut Ui, accent: Color32, add: impl FnOnce(&mut Ui) -> R) -> R {
     let full = ui.available_width();
     let resp = egui::Frame::new()
-        .fill(WHITE)
+        .fill(theme::surface())
         .corner_radius(egui::CornerRadius::same(8))
         .inner_margin(egui::Margin {
             left: 24,
@@ -47,7 +47,7 @@ pub fn card_accent<R>(ui: &mut Ui, accent: Color32, add: impl FnOnce(&mut Ui) ->
             top: 20,
             bottom: 20,
         })
-        .stroke(Stroke::new(1.0, theme::GRAY_100))
+        .stroke(Stroke::new(1.0, theme::border_soft()))
         .shadow(Shadow {
             color: Color32::from_black_alpha(12),
             ..Default::default()
@@ -75,22 +75,22 @@ pub fn card_accent<R>(ui: &mut Ui, accent: Color32, add: impl FnOnce(&mut Ui) ->
 
 /// Judul halaman (`text-2xl font-bold`).
 pub fn page_title(ui: &mut Ui, text: &str) {
-    ui.label(RichText::new(text).size(24.0).strong().color(theme::GRAY_900));
+    ui.label(RichText::new(text).size(24.0).strong().color(theme::text()));
 }
 
 /// Judul di dalam kartu (`text-lg font-semibold`).
 pub fn section_title(ui: &mut Ui, text: &str) {
-    ui.label(RichText::new(text).size(18.0).strong().color(theme::GRAY_900));
+    ui.label(RichText::new(text).size(18.0).strong().color(theme::text()));
 }
 
 /// Teks sekunder kecil (`text-sm text-gray-500`).
 pub fn muted(ui: &mut Ui, text: &str) {
-    ui.label(RichText::new(text).size(13.0).color(theme::GRAY_500));
+    ui.label(RichText::new(text).size(13.0).color(theme::text_muted()));
 }
 
 /// Label field form (`text-sm font-medium text-gray-700`).
 pub fn field_label(ui: &mut Ui, text: &str) {
-    ui.label(RichText::new(text).size(13.0).strong().color(theme::GRAY_700));
+    ui.label(RichText::new(text).size(13.0).strong().color(theme::text_soft()));
 }
 
 /// Titik warna kecil (penanda warna kategori/akun).
@@ -115,7 +115,7 @@ pub fn progress_bar(ui: &mut Ui, fraction: f32, color: Color32) {
     let width = ui.available_width();
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 8.0), Sense::hover());
     ui.painter()
-        .rect_filled(rect, egui::CornerRadius::same(4), theme::GRAY_200);
+        .rect_filled(rect, egui::CornerRadius::same(4), theme::track());
 
     let f = fraction.clamp(0.0, 1.0);
     if f > 0.0 {
@@ -134,27 +134,27 @@ pub struct ButtonStyle {
 }
 
 impl ButtonStyle {
-    pub const fn primary() -> Self {
+    pub fn primary() -> Self {
         Self {
-            fill: theme::PRIMARY,
-            hover: theme::BLUE_700,
+            fill: theme::primary_fill(),
+            hover: theme::primary_fill_hover(),
             text: WHITE,
         }
     }
 
-    pub const fn danger() -> Self {
+    pub fn danger() -> Self {
         Self {
-            fill: theme::RED_600,
-            hover: theme::RED_700,
+            fill: theme::danger_fill(),
+            hover: theme::danger_fill_hover(),
             text: WHITE,
         }
     }
 
-    pub const fn secondary() -> Self {
+    pub fn secondary() -> Self {
         Self {
-            fill: theme::GRAY_100,
-            hover: theme::GRAY_200,
-            text: theme::GRAY_700,
+            fill: theme::secondary_fill(),
+            hover: theme::secondary_fill_hover(),
+            text: theme::text_soft(),
         }
     }
 }
@@ -195,17 +195,17 @@ pub fn link(ui: &mut Ui, text: &str, color: Color32, hover: Color32) -> egui::Re
 /// Item navigasi di navbar; halaman aktif diberi latar biru muda.
 pub fn nav_button(ui: &mut Ui, text: &str, active: bool) -> egui::Response {
     let font = FontId::proportional(14.0);
-    let color = if active { theme::PRIMARY } else { theme::GRAY_700 };
+    let color = if active { theme::primary_text() } else { theme::text_soft() };
     let measure = ui.painter().layout_no_wrap(text.to_owned(), font.clone(), color);
     let (rect, resp) =
         ui.allocate_exact_size(egui::vec2(measure.size().x + 28.0, 36.0), Sense::click());
 
     if active {
         ui.painter()
-            .rect_filled(rect, egui::CornerRadius::same(6), theme::BLUE_50);
+            .rect_filled(rect, egui::CornerRadius::same(6), theme::primary_soft());
     } else if resp.hovered() {
         ui.painter()
-            .rect_filled(rect, egui::CornerRadius::same(6), theme::GRAY_100);
+            .rect_filled(rect, egui::CornerRadius::same(6), theme::secondary_fill());
     }
 
     let galley = ui.painter().layout_no_wrap(text.to_owned(), font, color);
@@ -214,28 +214,34 @@ pub fn nav_button(ui: &mut Ui, text: &str, active: bool) -> egui::Response {
     resp.on_hover_cursor(CursorIcon::PointingHand)
 }
 
-/// Tombol pilihan besar untuk tipe transaksi/kategori.
+/// Tombol pilihan besar untuk tipe transaksi/kategori atau pilihan periode.
+///
+/// `description` boleh diisi keterangan singkat di bawah judul; bila diisi,
+/// tinggi kartu bertambah agar ada ruang untuk keterangan tersebut.
 pub fn choice_card(
     ui: &mut Ui,
-    width: f32,
     text: &str,
+    description: Option<&str>,
     selected: bool,
+    width: f32,
     accent: Color32,
     accent_bg: Color32,
 ) -> egui::Response {
     let font = FontId::proportional(14.0);
-    let color = if selected { accent } else { theme::GRAY_700 };
-    let (rect, resp) = ui.allocate_exact_size(egui::vec2(width, 46.0), Sense::click());
+    let desc_font = FontId::proportional(12.0);
+    let color = if selected { accent } else { theme::text_soft() };
+    let height = if description.is_some() { 56.0 } else { 46.0 };
+    let (rect, resp) = ui.allocate_exact_size(egui::vec2(width, height), Sense::click());
 
     let fill = if selected {
         accent_bg
     } else if resp.hovered() {
-        theme::GRAY_50
+        theme::surface_alt()
     } else {
-        WHITE
+        theme::surface()
     };
-    let stroke_color = if selected { accent } else { theme::GRAY_200 };
-    let stroke_w = if selected { 2.0 } else { 2.0 };
+    let stroke_color = if selected { accent } else { theme::border() };
+    let stroke_w = if selected { 2.0 } else { 1.0 };
 
     ui.painter()
         .rect_filled(rect, egui::CornerRadius::same(8), fill);
@@ -246,9 +252,32 @@ pub fn choice_card(
         egui::StrokeKind::Inside,
     );
 
-    let galley = ui.painter().layout_no_wrap(text.to_owned(), font, color);
-    ui.painter()
-        .galley(rect.center() - galley.size() / 2.0, galley, color);
+    let galley = ui.painter().layout_no_wrap(text.to_owned(), font.clone(), color);
+    let mut center_y = rect.center().y;
+    if description.is_some() {
+        center_y -= 6.0;
+    }
+    ui.painter().galley(
+        egui::pos2(
+            rect.center().x - galley.size().x / 2.0,
+            center_y - galley.size().y / 2.0,
+        ),
+        galley,
+        color,
+    );
+    if let Some(desc) = description {
+        let desc_color = if selected { theme::text_soft() } else { theme::text_muted() };
+        let desc_galley = ui.painter().layout_no_wrap(desc.to_owned(), desc_font, desc_color);
+        let cy = rect.center().y + 8.0;
+        ui.painter().galley(
+            egui::pos2(
+                rect.center().x - desc_galley.size().x / 2.0,
+                cy - desc_galley.size().y / 2.0,
+            ),
+            desc_galley,
+            desc_color,
+        );
+    }
     resp.on_hover_cursor(CursorIcon::PointingHand)
 }
 
@@ -263,9 +292,9 @@ pub enum CellAlign {
 pub fn card_flush<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
     let full = ui.available_width();
     egui::Frame::new()
-        .fill(WHITE)
+        .fill(theme::surface())
         .corner_radius(egui::CornerRadius::same(8))
-        .stroke(Stroke::new(1.0, theme::GRAY_100))
+        .stroke(Stroke::new(1.0, theme::border_soft()))
         .shadow(Shadow {
             color: Color32::from_black_alpha(12),
             ..Default::default()
@@ -326,10 +355,10 @@ pub fn table_header(ui: &mut Ui, columns: &[(&str, f32, CellAlign)]) {
             sw: 0,
             se: 0,
         },
-        theme::GRAY_50,
+        theme::surface_alt(),
     );
     ui.painter()
-        .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, theme::GRAY_200));
+        .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, theme::border()));
 
     let rects = column_rects(table_inner(rect), columns);
     for ((label, _, align), cell) in columns.iter().zip(rects) {
@@ -342,7 +371,7 @@ pub fn table_header(ui: &mut Ui, columns: &[(&str, f32, CellAlign)]) {
             anchor,
             *label,
             FontId::proportional(11.0),
-            theme::GRAY_500,
+            theme::text_muted(),
         );
     }
 }
@@ -361,10 +390,10 @@ pub fn table_row<R>(
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(width, height), Sense::hover());
     if resp.hovered() {
         ui.painter()
-            .rect_filled(rect, egui::CornerRadius::same(0), theme::GRAY_50);
+            .rect_filled(rect, egui::CornerRadius::same(0), theme::surface_alt());
     }
     ui.painter()
-        .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, theme::GRAY_200));
+        .hline(rect.x_range(), rect.bottom(), Stroke::new(1.0, theme::border()));
 
     let rects = column_rects(table_inner(rect), columns);
     let out = add(ui, &rects);
@@ -429,10 +458,10 @@ pub fn empty_state(
     let mut clicked = false;
     ui.vertical_centered(|ui| {
         ui.add_space(24.0);
-        ui.label(RichText::new(icon).size(40.0).color(theme::GRAY_400));
+        ui.label(RichText::new(icon).size(40.0).color(theme::text_faint()));
         ui.add_space(4.0);
-        ui.label(RichText::new(title).size(14.0).strong().color(theme::GRAY_900));
-        ui.label(RichText::new(subtitle).size(14.0).color(theme::GRAY_500));
+        ui.label(RichText::new(title).size(14.0).strong().color(theme::text()));
+        ui.label(RichText::new(subtitle).size(14.0).color(theme::text_muted()));
         if let Some(label) = action {
             ui.add_space(12.0);
             ui.horizontal(|ui| {
@@ -456,10 +485,10 @@ pub fn modal<R>(
     add: impl FnOnce(&mut Ui) -> R,
 ) -> R {
     let frame = egui::Frame::NONE
-        .fill(Color32::WHITE)
+        .fill(theme::surface())
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(egui::Margin::same(24))
-        .stroke(Stroke::new(1.0, theme::GRAY_100));
+        .stroke(Stroke::new(1.0, theme::border_soft()));
 
     egui::Modal::new(egui::Id::new(id))
         .frame(frame)
@@ -487,11 +516,11 @@ pub fn stat_card(
     card_accent(ui, accent, |ui| {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.label(RichText::new(title).size(13.0).strong().color(theme::GRAY_600));
+                ui.label(RichText::new(title).size(13.0).strong().color(theme::text_muted()));
                 ui.add_space(2.0);
                 ui.label(RichText::new(value).size(24.0).strong().color(value_color));
                 ui.add_space(2.0);
-                ui.label(RichText::new(subtitle).size(11.0).color(theme::GRAY_500));
+                ui.label(RichText::new(subtitle).size(11.0).color(theme::text_muted()));
             });
 
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -512,13 +541,13 @@ pub fn stat_card(
 /// Kotak pesan kesalahan di dalam konten.
 pub fn error_box(ui: &mut Ui, message: &str) {
     egui::Frame::new()
-        .fill(theme::RED_50)
+        .fill(theme::expense_soft())
         .corner_radius(egui::CornerRadius::same(8))
         .inner_margin(egui::Margin::symmetric(16, 12))
-        .stroke(Stroke::new(1.0, theme::RED_500))
+        .stroke(Stroke::new(1.0, theme::expense_accent()))
         .show(ui, |ui| {
             ui.set_min_width(ui.available_width());
-            ui.label(RichText::new(message).size(14.0).color(theme::RED_800));
+            ui.label(RichText::new(message).size(14.0).color(theme::expense_badge_fg()));
         });
 }
 
@@ -527,9 +556,9 @@ pub fn back_arrow(ui: &mut Ui) -> egui::Response {
     let font = FontId::proportional(20.0);
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(28.0, 28.0), Sense::click());
     let color = if resp.hovered() {
-        theme::GRAY_700
+        theme::text_soft()
     } else {
-        theme::GRAY_500
+        theme::text_muted()
     };
     let galley = ui.painter().layout_no_wrap("\u{00AB}".to_owned(), font, color);
     ui.painter()

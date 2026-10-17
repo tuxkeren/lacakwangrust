@@ -2,7 +2,7 @@
 name = "lacakwangrust"
 version = "1.0.0"
 edition = "2021"
-description = "LacakWangRust - Pencatatan Keuangan Sederhana (Native Desktop, Rust + egui)"
+description = "Lacakuang - Pencatatan Keuangan Sederhana (Native Desktop, Rust + egui)"
 authors = ["Athailah (tuxkeren)"]
 
 [dependencies]
@@ -22,6 +22,7 @@ rusqlite = { version = "0.40.2", features = ["bundled"] }
 
 # Tanggal & waktu
 chrono = "0.4.45"
+printpdf = "0.7"
 
 [build-dependencies]
 # Dipakai `build.rs` untuk menyisipkan ikon & metadata ke .exe Windows.

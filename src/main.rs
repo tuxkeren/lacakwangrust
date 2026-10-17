@@ -12,6 +12,7 @@ mod config;
 mod controllers;
 mod db;
 mod models;
+mod pdf;
 mod ui;
 mod util;
 
@@ -49,7 +50,7 @@ fn fail(message: &str) -> ! {
                 .collect()
         };
         let text = wide(message);
-        let caption = wide("LacakWangRust");
+        let caption = wide("Lacakuang");
         // MB_OK | MB_ICONERROR | MB_SETFOREGROUND
         let flags = 0x0 | 0x10 | 0x10000;
         unsafe {
@@ -90,7 +91,7 @@ fn main() -> eframe::Result<()> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1200.0, 820.0])
             .with_min_inner_size([900.0, 620.0])
-            .with_title("LacakWangRust")
+            .with_title("Lacakuang")
             .with_icon(egui::IconData {
                 rgba: ICON_RGBA.to_vec(),
                 width: ICON_SIZE,
@@ -100,7 +101,7 @@ fn main() -> eframe::Result<()> {
     };
 
     match eframe::run_native(
-        "LacakWangRust",
+        "Lacakuang",
         native_options,
         Box::new(move |cc| Ok(Box::new(ui::App::new(cc, app_config, database)))),
     ) {

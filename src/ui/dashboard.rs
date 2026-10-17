@@ -27,28 +27,28 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             &mut cols[0],
             "Total Pemasukan",
             &util::format_rupiah(data.summary.income),
-            theme::GRAY_900,
+            theme::text(),
             "30 hari terakhir",
-            theme::GREEN_500,
-            theme::GREEN_100,
-            theme::GREEN_600,
+            theme::income_accent(),
+            theme::income_badge_bg(),
+            theme::income_text(),
             "\u{2B06}",
         );
         widgets::stat_card(
             &mut cols[1],
             "Total Pengeluaran",
             &util::format_rupiah(data.summary.expense),
-            theme::GRAY_900,
+            theme::text(),
             "30 hari terakhir",
-            theme::RED_500,
-            theme::RED_100,
-            theme::RED_600,
+            theme::expense_accent(),
+            theme::expense_badge_bg(),
+            theme::expense_text(),
             "\u{2B07}",
         );
         let balance_color = if data.balance >= 0.0 {
-            theme::GREEN_600
+            theme::income_text()
         } else {
-            theme::RED_600
+            theme::expense_text()
         };
         widgets::stat_card(
             &mut cols[2],
@@ -56,9 +56,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             &util::format_rupiah(data.balance),
             balance_color,
             "Selisih 30 hari",
-            theme::BLUE_500,
-            theme::BLUE_100,
-            theme::BLUE_600,
+            theme::primary_fill(),
+            theme::primary_badge_bg(),
+            theme::primary_badge_fg(),
             "\u{1F4B0}",
         );
     });
@@ -90,7 +90,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             widgets::section_title(ui, "Transaksi Terbaru");
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if widgets::link(ui, "Lihat Semua \u{00BB}", theme::PRIMARY, theme::BLUE_700).clicked()
+                if widgets::link(ui, "Lihat Semua \u{00BB}", theme::primary_text(), theme::primary_text_hover())
+                    .clicked()
                 {
                     app.page = Page::Transactions;
                 }
@@ -118,7 +119,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     ui.painter().hline(
                         rect.x_range(),
                         rect.center().y,
-                        Stroke::new(1.0, theme::GRAY_200),
+                        Stroke::new(1.0, theme::border()),
                     );
                 }
                 ui.add_space(12.0);
@@ -130,32 +131,32 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                                 RichText::new(&t.category_name)
                                     .size(14.0)
                                     .strong()
-                                    .color(theme::GRAY_900),
+                                    .color(theme::text()),
                             );
                             let (bg, fg) = if t.kind == "income" {
-                                (theme::GREEN_100, theme::GREEN_800)
+                                (theme::income_badge_bg(), theme::income_badge_fg())
                             } else {
-                                (theme::RED_100, theme::RED_800)
+                                (theme::expense_badge_bg(), theme::expense_badge_fg())
                             };
                             widgets::badge(ui, util::transaction_type_label(&t.kind), bg, fg);
                         });
                         if let Some(desc) = t.description.as_deref() {
                             if !desc.is_empty() {
-                                ui.label(RichText::new(desc).size(13.0).color(theme::GRAY_600));
+                                ui.label(RichText::new(desc).size(13.0).color(theme::text_muted()));
                             }
                         }
                         ui.label(
                             RichText::new(util::format_date_id(&t.date))
                                 .size(12.0)
-                                .color(theme::GRAY_500),
+                                .color(theme::text_muted()),
                         );
                     });
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         let color = if t.kind == "income" {
-                            theme::GREEN_600
+                            theme::income_text()
                         } else {
-                            theme::RED_600
+                            theme::expense_text()
                         };
                         let sign = if t.kind == "income" { "+" } else { "-" };
                         ui.label(
@@ -197,14 +198,14 @@ fn breakdown_card(
                     RichText::new(&cat.name)
                         .size(13.0)
                         .strong()
-                        .color(theme::GRAY_700),
+                        .color(theme::text_soft()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     ui.label(
                         RichText::new(util::format_rupiah(cat.total))
                             .size(13.0)
                             .strong()
-                            .color(theme::GRAY_900),
+                            .color(theme::text()),
                     );
                 });
             });

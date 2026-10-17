@@ -242,4 +242,34 @@ impl Transaction {
             |r| r.get(0),
         )
     }
+
+    /// Semua transaksi pada rentang tanggal `[from, to]` (inklusif),
+    /// diurutkan dari yang paling lama supaya cocok untuk laporan.
+    pub fn in_range(
+        conn: &Connection,
+        from: &str,
+        to: &str,
+    ) -> rusqlite::Result<Vec<TransactionRow>> {
+        let sql = format!(
+            "{} WHERE t.date >= ?1 AND t.date <= ?2 \
+             ORDER BY t.date ASC, t.created_at ASC, t.id ASC",
+            Self::SELECT_LIST
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params![from, to], Self::from_row)?;
+        rows.collect()
+    }
+
+    /// Selisih (pemasukan − pengeluaran) dari transaksi **sebelum** `date`.
+    ///
+    /// Dipakai untuk menghitung saldo awal periode laporan.
+    pub fn net_before(conn: &Connection, date: &str) -> rusqlite::Result<f64> {
+        conn.query_row(
+            "SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END), 0)
+             FROM transactions
+             WHERE date < ?1",
+            params![date],
+            |r| r.get(0),
+        )
+    }
 }

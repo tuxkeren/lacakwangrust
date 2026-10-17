@@ -18,10 +18,10 @@ fn main() {
 
     let mut res = winresource::WindowsResource::new();
     res.set_icon("assets/icon.ico");
-    res.set("ProductName", "LacakWangRust");
+    res.set("ProductName", "Lacakuang");
     res.set(
         "FileDescription",
-        "LacakWangRust - Pencatatan Keuangan Sederhana",
+        "Lacakuang - Pencatatan Keuangan Sederhana",
     );
     res.set("OriginalFilename", "lacakwangrust.exe");
     // Kredit pembuat juga ikut tertulis di properti berkas `.exe`

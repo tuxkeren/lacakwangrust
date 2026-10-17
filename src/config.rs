@@ -26,7 +26,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            app_name: "LacakWangRust".to_string(),
+            app_name: "Lacakuang".to_string(),
             version: "1.0.0".to_string(),
             currency_symbol: "Rp".to_string(),
             currency_code: "IDR".to_string(),
@@ -44,6 +44,32 @@ impl Config {
     pub fn author_credit(&self) -> String {
         format!("{} ({})", self.author, self.author_handle)
     }
+}
+
+/// Lokasi berkas preferensi tema (terang/gelap).
+/// Sengaja disimpan terpisah dari database agar skema database tetap identik
+/// dengan versi PHP. Bisa dioverride lewat environment variable
+/// `LACAKWANGRUST_THEME`.
+pub fn resolve_theme_path() -> PathBuf {
+    if let Ok(path) = std::env::var("LACAKWANGRUST_THEME") {
+        if !path.trim().is_empty() {
+            return PathBuf::from(path);
+        }
+    }
+    PathBuf::from("settings").join("tema.txt")
+}
+
+/// Lokasi folder penyimpanan laporan PDF.
+///
+/// Bisa dioverride lewat environment variable `LACAKWANGRUST_LAPORAN`,
+/// defaultnya `laporan` di samping aplikasi.
+pub fn resolve_report_dir() -> PathBuf {
+    if let Ok(path) = std::env::var("LACAKWANGRUST_LAPORAN") {
+        if !path.trim().is_empty() {
+            return PathBuf::from(path);
+        }
+    }
+    PathBuf::from("laporan")
 }
 
 /// Lokasi file database SQLite.

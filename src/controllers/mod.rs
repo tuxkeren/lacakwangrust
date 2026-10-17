@@ -6,9 +6,11 @@
 pub mod account;
 pub mod category;
 pub mod dashboard;
+pub mod report;
 pub mod transaction;
 
 pub use account::AccountController;
 pub use category::CategoryController;
 pub use dashboard::DashboardController;
+pub use report::ReportController;
 pub use transaction::{TransactionController, TransactionFilter};

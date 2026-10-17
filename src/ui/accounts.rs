@@ -36,28 +36,28 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             &mut cols[0],
             "Total Pemasukan",
             &util::format_rupiah(data.total_income),
-            theme::GRAY_900,
+            theme::text(),
             "Dari semua akun",
-            theme::GREEN_500,
-            theme::GREEN_100,
-            theme::GREEN_600,
+            theme::income_accent(),
+            theme::income_badge_bg(),
+            theme::income_text(),
             "\u{2B06}",
         );
         widgets::stat_card(
             &mut cols[1],
             "Total Pengeluaran",
             &util::format_rupiah(data.total_expense),
-            theme::GRAY_900,
+            theme::text(),
             "Dari semua akun",
-            theme::RED_500,
-            theme::RED_100,
-            theme::RED_600,
+            theme::expense_accent(),
+            theme::expense_badge_bg(),
+            theme::expense_text(),
             "\u{2B07}",
         );
         let balance_color = if data.total_balance >= 0.0 {
-            theme::GREEN_600
+            theme::income_text()
         } else {
-            theme::RED_600
+            theme::expense_text()
         };
         widgets::stat_card(
             &mut cols[2],
@@ -65,9 +65,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             &util::format_rupiah(data.total_balance),
             balance_color,
             "Gabungan semua akun",
-            theme::BLUE_500,
-            theme::BLUE_100,
-            theme::BLUE_600,
+            theme::primary_fill(),
+            theme::primary_badge_bg(),
+            theme::primary_badge_fg(),
             "\u{1F4B0}",
         );
     });
@@ -80,7 +80,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             "Pemasukan per Akun",
             &data.accounts,
             data.total_income,
-            theme::GREEN_500,
+            theme::income_accent(),
             "Belum ada pemasukan",
             true,
         );
@@ -89,7 +89,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             "Pengeluaran per Akun",
             &data.accounts,
             data.total_expense,
-            theme::RED_500,
+            theme::expense_accent(),
             "Belum ada pengeluaran",
             false,
         );
@@ -126,7 +126,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     egui::Sense::hover(),
                 );
                 ui.painter()
-                    .hline(rect.x_range(), rect.center().y, Stroke::new(1.0, theme::GRAY_200));
+                    .hline(rect.x_range(), rect.center().y, Stroke::new(1.0, theme::border()));
             }
             ui.add_space(12.0);
             account_row(ui, acc, app);
@@ -182,14 +182,14 @@ fn account_breakdown(
                     RichText::new(&acc.name)
                         .size(13.0)
                         .strong()
-                        .color(theme::GRAY_700),
+                        .color(theme::text_soft()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     ui.label(
                         RichText::new(util::format_rupiah(value))
                             .size(13.0)
                             .strong()
-                            .color(theme::GRAY_900),
+                            .color(theme::text()),
                     );
                 });
             });
@@ -203,10 +203,10 @@ fn account_breakdown(
 fn account_row(ui: &mut egui::Ui, acc: &AccountSummary, app: &mut App) {
     let type_color = util::account_type_color(&acc.kind);
     let (badge_bg, badge_fg) = match acc.kind.as_str() {
-        "cash" => (theme::GREEN_100, theme::GREEN_800),
-        "bank" => (theme::BLUE_100, theme::BLUE_800),
-        "ewallet" => (theme::PURPLE_100, theme::PURPLE_800),
-        _ => (theme::GRAY_100, theme::GRAY_800),
+        "cash" => (theme::income_badge_bg(), theme::income_badge_fg()),
+        "bank" => (theme::primary_badge_bg(), theme::primary_badge_fg()),
+        "ewallet" => (theme::purple_badge_bg(), theme::purple_badge_fg()),
+        _ => (theme::neutral_badge_bg(), theme::neutral_badge_fg()),
     };
 
     ui.horizontal(|ui| {
@@ -217,7 +217,7 @@ fn account_row(ui: &mut egui::Ui, acc: &AccountSummary, app: &mut App) {
                     RichText::new(&acc.name)
                         .size(15.0)
                         .strong()
-                        .color(theme::GRAY_900),
+                        .color(theme::text()),
                 );
                 widgets::badge(ui, util::account_type_label(&acc.kind), badge_bg, badge_fg);
             });
@@ -229,16 +229,16 @@ fn account_row(ui: &mut egui::Ui, acc: &AccountSummary, app: &mut App) {
                     util::format_rupiah(acc.total_expense),
                 ))
                 .size(13.0)
-                .color(theme::GRAY_600),
+                .color(theme::text_muted()),
             );
         });
 
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             ui.vertical(|ui| {
                 let color = if acc.current_balance >= 0.0 {
-                    theme::GREEN_600
+                    theme::income_text()
                 } else {
-                    theme::RED_600
+                    theme::expense_text()
                 };
                 let sign = if acc.current_balance >= 0.0 { "+" } else { "" };
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -254,7 +254,7 @@ fn account_row(ui: &mut egui::Ui, acc: &AccountSummary, app: &mut App) {
                     );
                 });
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if widgets::link(ui, "Hapus", theme::RED_600, theme::RED_800).clicked() {
+                    if widgets::link(ui, "Hapus", theme::danger_text(), theme::danger_text_hover()).clicked() {
                         app.confirm = Some(Confirm {
                             title: "Hapus Akun".into(),
                             message: format!(
@@ -265,7 +265,7 @@ fn account_row(ui: &mut egui::Ui, acc: &AccountSummary, app: &mut App) {
                         });
                     }
                     ui.add_space(12.0);
-                    if widgets::link(ui, "Edit", theme::PRIMARY, theme::BLUE_900).clicked() {
+                    if widgets::link(ui, "Edit", theme::primary_text(), theme::primary_text_hover()).clicked() {
                         app.open_acc_edit(acc.id);
                     }
                 });
@@ -289,7 +289,7 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
             RichText::new(if is_edit { "Edit Akun" } else { "Tambah Akun" })
                 .size(20.0)
                 .strong()
-                .color(theme::GRAY_900),
+                .color(theme::text()),
         );
         ui.add_space(16.0);
 

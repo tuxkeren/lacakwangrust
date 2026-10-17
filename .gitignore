@@ -10,3 +10,9 @@
 
 # Paket rilis lokal (biner dibagikan lewat GitHub Releases, bukan lewat repo)
 /dist/
+
+# Preferensi tema (dibuat otomatis, terpisah dari database).
+/settings/
+
+# Laporan PDF hasil cetak (dibuat otomatis oleh pengguna).
+/laporan/

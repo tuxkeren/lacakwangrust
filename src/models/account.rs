@@ -86,6 +86,13 @@ impl Account {
         Ok(())
     }
 
+    /// Jumlah saldo awal dari seluruh akun (kolom `balance` pada `accounts`).
+    pub fn initial_total(conn: &Connection) -> rusqlite::Result<f64> {
+        conn.query_row("SELECT COALESCE(SUM(balance), 0) FROM accounts", [], |r| {
+            r.get(0)
+        })
+    }
+
     /// Ringkasan tiap akun: saldo awal + pemasukan − pengeluaran.
     pub fn summary(conn: &Connection) -> rusqlite::Result<Vec<AccountSummary>> {
         let mut stmt = conn.prepare(

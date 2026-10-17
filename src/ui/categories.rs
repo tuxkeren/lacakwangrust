@@ -36,7 +36,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         category_group(
             &mut cols[0],
             "Kategori Pemasukan",
-            theme::GREEN_500,
+            theme::income_accent(),
             &data.income_categories,
             "Belum ada kategori pemasukan",
             app,
@@ -44,7 +44,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         category_group(
             &mut cols[1],
             "Kategori Pengeluaran",
-            theme::RED_500,
+            theme::expense_accent(),
             &data.expense_categories,
             "Belum ada kategori pengeluaran",
             app,
@@ -96,7 +96,7 @@ fn category_group(
 
 fn category_chip(ui: &mut egui::Ui, cat: &Category, app: &mut App) {
     egui::Frame::new()
-        .fill(theme::GRAY_50)
+        .fill(theme::surface_alt())
         .corner_radius(egui::CornerRadius::same(8))
         .inner_margin(egui::Margin::symmetric(12, 10))
         .show(ui, |ui| {
@@ -107,10 +107,10 @@ fn category_chip(ui: &mut egui::Ui, cat: &Category, app: &mut App) {
                     RichText::new(util::truncate(&cat.name, 14))
                         .size(13.0)
                         .strong()
-                        .color(theme::GRAY_900),
+                        .color(theme::text()),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if widgets::link(ui, "\u{1F5D1}", theme::RED_600, theme::RED_700).clicked() {
+                    if widgets::link(ui, "\u{1F5D1}", theme::danger_text(), theme::danger_text_hover()).clicked() {
                         app.confirm = Some(Confirm {
                             title: "Hapus Kategori".into(),
                             message: format!(
@@ -120,7 +120,7 @@ fn category_chip(ui: &mut egui::Ui, cat: &Category, app: &mut App) {
                             action: ConfirmAction::DeleteCategory(cat.id),
                         });
                     }
-                    if widgets::link(ui, "\u{270F}", theme::PRIMARY, theme::BLUE_900).clicked() {
+                    if widgets::link(ui, "\u{270F}", theme::primary_text(), theme::primary_text_hover()).clicked() {
                         app.open_cat_edit(cat.id);
                     }
                 });
@@ -143,7 +143,7 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
             RichText::new(if is_edit { "Edit Kategori" } else { "Tambah Kategori" })
                 .size(20.0)
                 .strong()
-                .color(theme::GRAY_900),
+                .color(theme::text()),
         );
         ui.add_space(16.0);
 
@@ -155,11 +155,12 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             if widgets::choice_card(
                 ui,
-                w,
                 "Pemasukan",
+                None,
                 form.kind == "income",
-                theme::GREEN_500,
-                theme::GREEN_50,
+                w,
+                theme::income_accent(),
+                theme::income_soft(),
             )
             .clicked()
             {
@@ -168,11 +169,12 @@ pub fn show_form(app: &mut App, ctx: &egui::Context) {
             ui.add_space(gap);
             if widgets::choice_card(
                 ui,
-                w,
                 "Pengeluaran",
+                None,
                 form.kind == "expense",
-                theme::RED_500,
-                theme::RED_50,
+                w,
+                theme::expense_accent(),
+                theme::expense_soft(),
             )
             .clicked()
             {
@@ -256,7 +258,7 @@ fn swatch(ui: &mut egui::Ui, hex: &str, selected: bool) -> egui::Response {
     ui.painter().circle_filled(rect.center(), 12.0, color);
     if selected {
         ui.painter()
-            .circle_stroke(rect.center(), 14.0, Stroke::new(2.0, theme::GRAY_700));
+            .circle_stroke(rect.center(), 14.0, Stroke::new(2.0, theme::text_soft()));
     }
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
