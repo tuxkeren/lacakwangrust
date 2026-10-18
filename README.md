@@ -8,6 +8,7 @@ desktop biasa — **tanpa browser, tanpa webview, tanpa JavaScript**.
 - **Bahasa**: Rust (edition 2021)
 - **GUI**: [egui](https://github.com/emilk/egui) / eframe 0.36 dengan backend OpenGL (`glow`)
 - **Database**: SQLite (via `rusqlite`, library SQLite di-*bundle*)
+- **Dialog file**: [rfd](https://github.com/PolyMeilex/rfd) — "Simpan Sebagai" memakai dialog bawaan sistem
 - **Arsitektur**: tetap MVC seperti versi PHP — `models` (data), `controllers` (logika), `ui` (tampilan)
 
 ## ⚠️ Disclaimer
@@ -211,8 +212,11 @@ lacakwangrust/
   **Pengeluaran** (kanan). Tiap baris memuat tanggal, deskripsi, dan jumlah.
 - Di bagian bawah ditampilkan ringkasan (total pemasukan, total pengeluaran,
   selisih, saldo awal periode) dan **sisa saldo** pada akhir periode.
-- Hasil disimpan otomatis di folder `laporan/` dengan nama
-  `laporan-YYYYMMDD-HHMMSS.pdf` (tanpa dialog sistem).
+- Tombol **💾 Simpan Sebagai…** membuka dialog "Save As" bawaan sistem
+  (xdg-portal di Linux, dialog file bawaan Windows di Windows); folder
+  `laporan/` dengan nama `laporan-YYYYMMDD-HHMMSS.pdf` jadi titik awalnya,
+  dan ekstensi `.pdf` ditambahkan otomatis bila pengguna tidak mengetiknya.
+  Bila dialog dibatalkan, dialog laporan tetap terbuka tanpa pesan galat.
 - Bila tidak ada transaksi pada periode terpilih, laporan tidak dibuat dan
   dialog menampilkan pesan galat.
 - PDF ditulis langsung oleh aplikasi (font bawaan Helvetica), tanpa
@@ -311,7 +315,7 @@ environment variable:
 | ----------------------- | ---------------- | --------------------------------------- |
 | `LACAKWANGRUST_DB`      | `database/lacakwangrust.db` | Lokasi file database SQLite   |
 | `LACAKWANGRUST_THEME`   | `settings/tema.txt`         | Lokasi berkas preferensi tema |
-| `LACAKWANGRUST_LAPORAN` | `laporan`                   | Folder tujuan laporan PDF     |
+| `LACAKWANGRUST_LAPORAN` | `laporan`                   | Folder awal dialog laporan PDF |
 
 ## 🆚 Perbedaan dengan Versi PHP
 

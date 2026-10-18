@@ -2,6 +2,10 @@
 //!
 //! Laporan berisi pemasukan di kolom kiri, pengeluaran di kolom kanan,
 //! lengkap dengan tanggal, deskripsi, jumlah, dan sisa saldo di akhir.
+//! Lokasi & nama berkas dipilih lewat dialog "Simpan Sebagai" bawaan
+//! sistem, dengan folder serta nama default sebagai titik awal.
+
+use std::path::{Path, PathBuf};
 
 use eframe::egui::{self, Align, Layout, RichText, Vec2};
 
@@ -20,7 +24,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     }
 
     let mut close = false;
-    let mut generate = false;
+    let mut save_as = false;
     let period = app.report_period;
     let report_dir = config::resolve_report_dir();
     let report_dir_display = report_dir.display().to_string();
@@ -121,9 +125,12 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         );
         ui.add_space(6.0);
         ui.label(
-            RichText::new(format!("Berkas akan disimpan di folder: {}", report_dir_display))
-                .size(13.0)
-                .color(theme::text_muted()),
+            RichText::new(format!(
+                "Folder default: {} (jadi titik awal dialog sistem)",
+                report_dir_display
+            ))
+            .size(13.0)
+            .color(theme::text_muted()),
         );
 
         if let Some(err) = &app.report_error {
@@ -138,13 +145,13 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
             let right = full - gap - left;
             if widgets::styled_button(
                 ui,
-                "\u{1F9FE} Buat Laporan PDF",
+                "\u{1F9FE} Simpan Sebagai…",
                 ButtonStyle::primary(),
                 Some(left),
             )
             .clicked()
             {
-                generate = true;
+                save_as = true;
             }
             ui.add_space(gap);
             if widgets::styled_button(ui, "Batal", ButtonStyle::secondary(), Some(right))
@@ -155,25 +162,33 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         });
     });
 
-    if generate {
+    if save_as {
+        // Data dibangun dulu agar galat (mis. tidak ada transaksi) muncul
+        // sebelum dialog sistem terbuka.
         let conn = app.db.conn();
         match ReportController::build(conn, app.report_period) {
             Ok(data) => {
-                let target = pdf::default_report_path(&report_dir);
-                let meta = ReportMeta {
-                    app_name: app.config.app_name.clone(),
-                    version: app.config.version.clone(),
-                    currency_code: app.config.currency_code.clone(),
-                    author: app.config.author.clone(),
-                };
-                match pdf::write_laporan(&target, &data, &meta) {
-                    Ok(_) => {
-                        app.report_error = None;
-                        app.notify_success(format!("Laporan PDF tersimpan: {}", target.display()));
-                        close = true;
-                    }
-                    Err(e) => {
-                        app.report_error = Some(e);
+                // `None` berarti pengguna membatalkan dialog sistem:
+                // biarkan dialog laporan tetap terbuka tanpa pesan galat.
+                if let Some(target) = pilih_lokasi_simpan(&report_dir) {
+                    let meta = ReportMeta {
+                        app_name: app.config.app_name.clone(),
+                        version: app.config.version.clone(),
+                        currency_code: app.config.currency_code.clone(),
+                        author: app.config.author.clone(),
+                    };
+                    match pdf::write_laporan(&target, &data, &meta) {
+                        Ok(_) => {
+                            app.report_error = None;
+                            app.notify_success(format!(
+                                "Laporan PDF tersimpan: {}",
+                                target.display()
+                            ));
+                            close = true;
+                        }
+                        Err(e) => {
+                            app.report_error = Some(e);
+                        }
                     }
                 }
             }
@@ -187,4 +202,27 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         app.report_open = false;
         app.report_error = None;
     }
+}
+
+/// Membuka dialog "Simpan Sebagai" bawaan sistem untuk laporan PDF.
+///
+/// Mengembalikan `None` bila pengguna membatalkan dialog. Nama berkas
+/// diisi awal dengan nama default laporan; folder default dipakai sebagai
+/// titik awal bila folder tersebut ada.
+fn pilih_lokasi_simpan(report_dir: &Path) -> Option<PathBuf> {
+    let mut dialog = rfd::FileDialog::new()
+        .set_title("Simpan Laporan PDF Sebagai")
+        .add_filter("Dokumen PDF", &["pdf"])
+        .set_file_name(pdf::default_report_file_name());
+    if report_dir.is_dir() {
+        dialog = dialog.set_directory(report_dir);
+    }
+
+    let mut path = dialog.save_file()?;
+    // Pastikan ekstensi `.pdf` ikut tertulis bila pengguna tidak mengetiknya
+    // (mis. mengetik `laporan-20261018` saja, atau nama berakhir titik).
+    if path.extension().map_or(true, |e| e.is_empty()) {
+        path.set_extension("pdf");
+    }
+    Some(path)
 }

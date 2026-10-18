@@ -11,7 +11,7 @@
 
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use printpdf::path::PaintMode;
 use printpdf::*;
@@ -57,10 +57,11 @@ pub struct ReportMeta {
     pub author: String,
 }
 
-/// Nama berkas default untuk laporan PDF.
-pub fn default_report_path(dir: &Path) -> PathBuf {
+/// Nama berkas default untuk laporan PDF (tanpa folder), dipakai juga
+/// sebagai nama awal pada dialog "Simpan Sebagai".
+pub fn default_report_file_name() -> String {
     let stamp = chrono::Local::now().format("%Y%m%d-%H%M%S");
-    dir.join(format!("laporan-{stamp}.pdf"))
+    format!("laporan-{stamp}.pdf")
 }
 
 /// Menulis laporan `data` ke berkas PDF di `path`.
@@ -513,13 +514,14 @@ mod tests {
     }
 
     #[test]
-    fn default_report_path_berakhir_pdf() {
-        let dir = std::path::Path::new("/tmp/opencode/laporan");
-        let path = default_report_path(dir);
-        assert_eq!(path.parent(), Some(dir));
-        let nama = path.file_name().unwrap().to_string_lossy();
+    fn nama_berkas_default_tanpa_folder() {
+        let nama = default_report_file_name();
         assert!(nama.starts_with("laporan-"), "nama: {nama}");
         assert!(nama.ends_with(".pdf"), "nama: {nama}");
+        assert!(
+            !nama.contains('/') && !nama.contains('\\'),
+            "nama berkas tidak boleh memuat folder: {nama}"
+        );
     }
 
     #[test]

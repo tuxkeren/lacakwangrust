@@ -59,7 +59,7 @@ pub fn resolve_theme_path() -> PathBuf {
     PathBuf::from("settings").join("tema.txt")
 }
 
-/// Lokasi folder penyimpanan laporan PDF.
+/// Lokasi folder awal dialog "Simpan Sebagai" laporan PDF.
 ///
 /// Bisa dioverride lewat environment variable `LACAKWANGRUST_LAPORAN`,
 /// defaultnya `laporan` di samping aplikasi.

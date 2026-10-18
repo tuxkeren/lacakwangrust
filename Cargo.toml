@@ -24,6 +24,10 @@ rusqlite = { version = "0.40.2", features = ["bundled"] }
 chrono = "0.4.45"
 printpdf = "0.7"
 
+# Dialog "Simpan Sebagai" bawaan sistem (Linux: xdg-portal/D-Bus, Windows: dialog file Windows).
+# Tidak butuh GTK: backend Linux memakai portal, bukan gtk3.
+rfd = "0.15"
+
 [build-dependencies]
 # Dipakai `build.rs` untuk menyisipkan ikon & metadata ke .exe Windows.
 # Pada target non-Windows tidak dijalankan (lihat build.rs).
