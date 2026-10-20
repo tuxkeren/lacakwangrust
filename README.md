@@ -49,6 +49,28 @@ cargo build --release
 Binary hasil build sudah mencakup SQLite di dalamnya, jadi tidak perlu
 memasang SQLite secara terpisah.
 
+### 🐧 Menu aplikasi (Ubuntu/GNOME)
+
+Supaya Lacakuang muncul di menu aplikasi beserta ikonnya:
+
+```bash
+cargo build --release
+scripts/install-linux-menu.sh
+```
+
+Pemasangan tanpa sudo, hanya untuk pengguna yang login:
+
+- `~/.local/share/applications/lacakuang.desktop` — entri menu
+- ikon PNG 32–512 px di tema `hicolor` (`lacakuang.png`)
+- launcher kecil yang membuka binary release dengan folder kerja tempat
+  data (`database/`, `settings/`, `laporan/`) berada
+
+Lepas kembali dengan `scripts/install-linux-menu.sh --uninstall`.
+Binary/lokasi bisa diganti lewat environment `LACAKWANGRUST_BIN` dan
+`LACAKWANGRUST_DIR`. Setelah source diubah, jalankan ulang
+`cargo build --release` — skrip akan memperingatkan bila binary lebih
+lama dari source.
+
 ## 🪟 Versi Windows (siap pakai, tanpa install Rust)
 
 Windows **tidak perlu memasang Rust** — unduh paket siap pakai dari halaman
@@ -146,7 +168,8 @@ lacakwangrust/
 │   ├── lacakwangrust-windows-x86_64/   # .exe + panduan (siap salin)
 │   └── lacakwangrust-windows-x86_64.zip
 ├── scripts/
-│   └── build-windows.sh        # Cross-compile .exe dari Linux
+│   ├── build-windows.sh        # Cross-compile .exe dari Linux
+│   └── install-linux-menu.sh   # Pasang entri menu + ikon di Ubuntu/GNOME
 ├── tools/
 │   └── make_icon.py            # Pembuat ikon (.ico/.png/.rgba)
 └── src/

@@ -92,6 +92,10 @@ fn main() -> eframe::Result<()> {
             .with_inner_size([1200.0, 820.0])
             .with_min_inner_size([900.0, 620.0])
             .with_title("Lacakuang")
+            // ID aplikasi dipakai desktop (Wayland/GNOME) mencocokkan jendela
+            // dengan entri menu `lacakuang.desktop`, supaya ikon di dock/alt-tab
+            // benar. Lihat scripts/install-linux-menu.sh.
+            .with_app_id("lacakuang")
             .with_icon(egui::IconData {
                 rgba: ICON_RGBA.to_vec(),
                 width: ICON_SIZE,
