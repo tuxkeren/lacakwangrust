@@ -153,22 +153,45 @@ pub fn parse_amount(input: &str) -> Option<f64> {
     // Normalisasi: koma dianggap desimal.
     cleaned = cleaned.replace(',', ".");
 
-    let dots = cleaned.matches('.').count();
-    if dots > 1 {
-        // Banyak titik -> semua dianggap pemisah ribuan kecuali yang terakhir.
-        if let Some(idx) = cleaned.rfind('.') {
-            let (head, tail) = cleaned.split_at(idx);
-            cleaned = format!("{}{}", head.replace('.', ""), tail);
-        }
-    } else if dots == 1 {
-        // Satu titik: kalau tepat 3 digit di belakangnya, anggap pemisah ribuan.
-        if let Some(idx) = cleaned.rfind('.') {
-            let after = &cleaned[idx + 1..];
-            if after.len() == 3 && after.chars().all(|c| c.is_ascii_digit()) {
-                cleaned = cleaned.replace('.', "");
-            }
-        }
+    if let Some(idx) = cleaned.rfind('.') {
+        let (head, tail) = cleaned.split_at(idx);
+        let after = &tail[1..];
+        let tail = if after.len() == 3 && after.chars().all(|c| c.is_ascii_digit()) {
+            after
+        } else {
+            tail
+        };
+        cleaned = format!("{}{}", head.replace('.', ""), tail);
     }
 
     cleaned.parse::<f64>().ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_amount_pemisah_ribuan() {
+        assert_eq!(parse_amount("1500"), Some(1500.0));
+        assert_eq!(parse_amount("50.000"), Some(50_000.0));
+        assert_eq!(parse_amount("1.500.000"), Some(1_500_000.0));
+        assert_eq!(parse_amount("Rp 2.000.000"), Some(2_000_000.0));
+        assert_eq!(parse_amount("Rp2.000.000.000"), Some(2_000_000_000.0));
+    }
+
+    #[test]
+    fn parse_amount_desimal() {
+        assert_eq!(parse_amount("1500.5"), Some(1500.5));
+        assert_eq!(parse_amount("50000,50"), Some(50_000.5));
+        assert_eq!(parse_amount("1.500,50"), Some(1500.5));
+        assert_eq!(parse_amount("1.500.000,25"), Some(1_500_000.25));
+    }
+
+    #[test]
+    fn parse_amount_tidak_valid() {
+        assert_eq!(parse_amount(""), None);
+        assert_eq!(parse_amount("Rp "), None);
+        assert_eq!(parse_amount("abc"), None);
+    }
 }
